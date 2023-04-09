@@ -57,10 +57,10 @@ classdef WhiskerTracker <DataAppender&WhiskerDetector
         end
 
         function status = run_janelia_whisker_tracking(self,vidname)
-            THISx = ['trace ' self.data_folder 'Mask' vidname 'L.avi ' self.data_folder 'Mask' vidname 'L.whiskers'];
-            THISy = ['trace ' self.data_folder   'Mirror' vidname 'R.avi ' self.data_folder 'Mirror' vidname 'R.whiskers'];
-            THISx2 = ['       measure --face right '  self.data_folder  'Mask' vidname 'L.whiskers '  self.data_folder  'Mask' vidname 'L.measurements               '];
-            THISY2 = ['       measure --face right '  self.data_folder  'Mirror' vidname 'R.whiskers '  self.data_folder  'Mirror' vidname 'R.measurements               '];
+            THISx = ['trace "' self.data_folder '\Mask' vidname 'L.avi ' self.data_folder '\Mask' vidname 'L.whiskers"'];
+            THISy = ['trace "' self.data_folder   '\Mirror' vidname 'R.avi ' self.data_folder '\Mirror' vidname 'R.whiskers"'];
+            THISx2 = ['       measure --face right "'  self.data_folder  '\Mask' vidname 'L.whiskers" "'  self.data_folder  '\Mask' vidname 'L.measurements"               '];
+            THISY2 = ['       measure --face right "'  self.data_folder  '\Mirror' vidname 'R.whiskers" "'  self.data_folder  '\Mirror' vidname 'R.measurements"               '];
             status = system(THISx);
             status2 = system(THISy);
             status3 = system(THISx2);
@@ -167,7 +167,7 @@ classdef WhiskerTracker <DataAppender&WhiskerDetector
         right_video = VideoReader(fullfile(self.data_folder,['Mirror' trial_names{1} 'R.avi']));
         for  vidname =trial_names
             vidname = vidname{1};
-            self.run_janelia_whisker_tracking(vidname);
+            % self.run_janelia_whisker_tracking(vidname);
             [left_dlc,right_dlc] = self.load_dlc_files();
             [frame_size_left,frame_size_right] = self.get_frame_sizes(left_video,right_video);
             [distance_left,distance_right] = self.get_distance_left_and_right(left_dlc,right_dlc);
