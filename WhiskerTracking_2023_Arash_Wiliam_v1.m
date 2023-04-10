@@ -1,10 +1,8 @@
 %% this m file is using one single DLC file to detect whisker base of both Right whiskers and Left whiskser (in Mirror R format)
-data_folder = '\\dk-server.dk.ucsd.edu\data\afassihizakeri\Topviewmovies\ar30\2020_11_05';
+data_folder = '\\dk-server.dk.ucsd.edu\data\afassihizakeri\topview data\2023_02_22_ 163923';
 tracker = WhiskerTracker(data_folder);
 tracker.main()
-
 wait_bar = waitbar(0,'Tracking in progress...');
-
 for  vidname =trial_names
     trial = str2num(vidname);
     %% using commnads from Janelia whisker tracking algorithm 
@@ -16,7 +14,6 @@ for  vidname =trial_names
     status2 = system(THISy);
     status3 = system(THISx2);
     status4 = system(THISY2);
-    %%
     measurementsR = LoadMeasurements([data_folder 'Mirror' vidname 'R.measurements']);
     measurementsL = LoadMeasurements([data_folder 'Mask' vidname 'L.measurements']);
     TMR = struct2table(measurementsR);
@@ -32,7 +29,7 @@ for  vidname =trial_names
     optsL = detectImportOptions(textfilenameL);
     optsL.VariableNames={'frames', 'x1','y1','L1'...
         ,'x2','y2','L2','x3','y3','L3','x4','y4','L4','x5','y5','L5'};
-    %   open tables with DLC whisker files
+    %open tables with DLC whisker files
     TLeft = readtable(textfilenameL,optsL);
     TRight = readtable(textfilenameR,optsR);        
     [TLeft,TRight]=Smooth_whiskerDLCTLeft(TLeft,TRight,Numberofwhiskers);
@@ -110,7 +107,7 @@ for  vidname =trial_names
         % find the mask and whisker values from deep lab cut
         [probability,~,~,X2,Y2,boundariesR ,BW ]= findthemask_WhiskerBaseonly_2 (ThissizeR,i,TRight,GuassFilterSize,Numberofwhiskers,XYbiasDLC);
         Ron_Leftoff=1;
-        [Whisker,AllwTrialR] = (Whisker,i,boundariesR,Ron_Leftoff,ifplot,vR,BW,X2,Y2,TWR,TMR,probability,badframesR,plottype,Numberofwhiskers,minimumwhiskerlenght,arclenththreshold);
+        [Whisker,AllwTrialR] = addwhiskertrialfromDLCandJanelia_WhiskerBaseOnly_Sep2021(Whisker,i,boundariesR,Ron_Leftoff,ifplot,vR,BW,X2,Y2,TWR,TMR,probability,badframesR,plottype,Numberofwhiskers,minimumwhiskerlenght,arclenththreshold);
         if isempty(AllwTrialR.X{1})
             continue
         end
@@ -129,7 +126,6 @@ for  vidname =trial_names
             axis image
             hold off
             colormap gray
-            
             subplot(2,4,8);
         end
         if i>1&&size(X2,1)<2
@@ -143,7 +139,6 @@ for  vidname =trial_names
       XYbiasDLC(2)=3;
         [probability,~,~,X2,Y2,boundariesL ,BW ]= findthemask_WhiskerBaseonly_2 (ThissizeL,i,TLeft,GuassFilterSize,Numberofwhiskers,XYbiasDLC);
         [Whisker,AllwTrialL] = addwhiskertrialfromDLCandJanelia_WhiskerBaseOnly_Sep2021(Whisker,i,boundariesL,Ron_Leftoff,ifplot,vL,BW,X2,Y2,TWL,TML,probability,badframesL,plottype,Numberofwhiskers,minimumwhiskerlenght,arclenththreshold);
-
         if isempty(AllwTrialL.X{1})
             continue
         end
@@ -151,7 +146,6 @@ for  vidname =trial_names
             X2= Whisker.L.BaseDLCX(end,:);
             Y2= Whisker.L.BaseDLCY(end,:);
         end
-        
         Whisker.L.BaseDLCX(i,:)=X2;
         Whisker.L.BaseDLCY(i,:)=Y2;
         if ifplot
@@ -179,7 +173,6 @@ for  vidname =trial_names
                 subplot(2,4,xx)
                 hold off
                 plot(1,1,'k.')
-                
             end
         end
     end
@@ -244,6 +237,6 @@ end
 save thetrialnumber thetrialnumber
 for i=1:200
     close()
-    F = findall(0,'type','figure','tag','TMWWaitbar')
+    F = findall(0,'type','figure','tag','TMWWaitbar');
     delete(F)
 end

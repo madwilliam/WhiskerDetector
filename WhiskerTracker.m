@@ -160,71 +160,72 @@ classdef WhiskerTracker <DataAppender&WhiskerDetector
                 plot(1,1,'k.')
             end
         end
-      
-    function main(self)
-        trial_names = self.get_trial_names();
-        left_video = VideoReader(fullfile(self.data_folder,['Mask' trial_names{1} 'L.avi']));
-        right_video = VideoReader(fullfile(self.data_folder,['Mirror' trial_names{1} 'R.avi']));
-        for  vidname =trial_names
-            vidname = vidname{1};
-            self.run_janelia_whisker_tracking(vidname);
-            [left_dlc,right_dlc] = self.load_dlc_files();
-            [frame_size_left,frame_size_right] = self.get_frame_sizes(left_video,right_video);
+
+        function shared_frames = get_shared_frames(self,frame_data,left_dlc,right_dlc)
             [distance_left,distance_right] = self.get_distance_left_and_right(left_dlc,right_dlc);
-            frame_data = readtable(fullfile(self.data_folder ,[vidname 'FrameData.xlsx']));
-            good_frames = frame_data.goodframes-1;
+            assert(numel(distance_left)==numel(distance_right))
             nose_to_snout_distance = self.get_nose_to_snout_distance(frame_data,right_dlc);
-            self.Whisker = self.get_whisker_data(frame_data);
-            if numel(distance_left)~=numel(distance_right)
-                continue
-            end
             face_measure = (smooth(abs(zscore(distance_left))+abs(zscore(distance_right))+abs(zscore(nose_to_snout_distance)),40));
+            good_frames = frame_data.goodframes-1;
             shared_frames = intersect(right_dlc.frames,left_dlc.frames);
             shared_frames = intersect(shared_frames,good_frames);
             shared_frames = shared_frames(face_measure(shared_frames+1)<=10);
-            for framei=shared_frames'+1
-                [probability,whisker_boundaries,~]= self.findWhiskers(frame_size_right,framei,right_dlc);
-                allwhisker_right = self.append_data(framei,'right',whisker_boundaries,probability);
-                if isempty(allwhisker_right.X{1})
-                    continue
+        end
+      
+        function main(self)
+            trial_names = self.get_trial_names();
+            [frame_size_left,frame_size_right] = self.get_frame_sizes(trial_names);
+            [left_dlc,right_dlc] = self.load_dlc_files();
+            for  vidname =trial_names
+                vidname = vidname{1};
+                self.run_janelia_whisker_tracking(vidname);
+                try
+                    frame_data = readtable(fullfile(self.data_folder ,[vidname 'FrameData.xlsx']));
+                catch
+                    frame_data = readtable(fullfile(self.data_folder ,[vidname 'FrameData.xls']));
                 end
-                [probability,whisker_boundaries,~]= self.findWhiskers(frame_size_left,framei,right_dlc);
-                allwhisker_left = self.append_data(framei,'left',whisker_boundaries,probability);
-                if isempty(allwhisker_left.X{1})
-                    continue
+                self.Whisker = self.get_whisker_data(frame_data);
+                shared_frames = self.get_shared_frames(frame_data,left_dlc,right_dlc);
+                for framei=shared_frames'+1
+                    [probability,whisker_boundaries,~]= self.findWhiskers(frame_size_right,framei,right_dlc);
+                    allwhisker_right = self.append_data(framei,'right',whisker_boundaries,probability);
+                    if isempty(allwhisker_right.X{1})
+                        continue
+                    end
+                    [probability,whisker_boundaries,~]= self.findWhiskers(frame_size_left,framei,right_dlc);
+                    allwhisker_left = self.append_data(framei,'left',whisker_boundaries,probability);
+                    if isempty(allwhisker_left.X{1})
+                        continue
+                    end
+                    if framei>1&&size(X,1)<2
+                        Whisker.L.BaseDLCX(framei,:) = Whisker.L.BaseDLCX(end,:);
+                        Whisker.L.BaseDLCY(framei,:) = Whisker.L.BaseDLCY(end,:);
+                    end
+                    allwhisker.R = allwhisker_right;
+                    allwhisker.L = allwhisker_left;
+                    save(fullfile(self.data_folder,[vidname ,'.mat']),allwhisker)
+                    Whisker.DLC =frame_data;
+                    Whisker.Name = vidname;
+                    self.create_plot()
+                    toc
                 end
-                if framei>1&&size(X,1)<2
-                    Whisker.L.BaseDLCX(framei,:) = Whisker.L.BaseDLCX(end,:);
-                    Whisker.L.BaseDLCY(framei,:) = Whisker.L.BaseDLCY(end,:);
-                end
-                allwhisker.R = allwhisker_right;
-                allwhisker.L = allwhisker_left;
-                save(fullfile(self.data_folder,[vidname ,'.mat']),allwhisker)
-                Whisker.DLC =frame_data;
-                Whisker.Name = vidname;
-                self.create_plot()
-                toc
             end
         end
-    end
-   end
-   methods(Static)
-        function [ThissizeL,ThissizeR] = get_frame_sizes(vL,vR)
-            im2R = readindex(vR,double(100));  
+
+        function [ThissizeL,ThissizeR] = get_frame_sizes(self,trial_names)
+            left_video = VideoReader(fullfile(self.data_folder,['Mask' trial_names{1} 'L.avi']));
+            right_video = VideoReader(fullfile(self.data_folder,['Mirror' trial_names{1} 'R.avi']));
+            im2R = readindex(right_video,double(100));  
             im2R = im2R(:,:,1);
             ThissizeR(1) = size(im2R,1);
             ThissizeR(2) = size(im2R,2);
-            im2 = readindex(vL,double(100));  
+            im2 = readindex(left_video,double(100));  
             im2 = im2(:,:,1);
             ThissizeL(1) = size(im2,1);
             ThissizeL(2) = size(im2,2);
         end
         
-        function result = distance_as_expected(distance_right,distance_left,nose_to_snout_distance)
-            result = (smooth(abs(zscore(distance_left))+abs(zscore(distance_right))+abs(zscore(nose_to_snout_distance)),40))>10;
-        end
-
-        function nose_to_snout_distance = get_nose_to_snout_distance(frame_data,right_dlc)
+        function nose_to_snout_distance = get_nose_to_snout_distance(self,frame_data,right_dlc)
             good_frames = frame_data.goodframes-1;
             theseframes =ismember(frame_data.goodframes-1, good_frames(right_dlc.frames+1));
             nose_pixel = [frame_data.Nosex(theseframes),frame_data.Nosey(theseframes)];
@@ -232,7 +233,7 @@ classdef WhiskerTracker <DataAppender&WhiskerDetector
             nose_to_snout_distance = sqrt( (snout_pixel(:,1)-nose_pixel(:,1)).^2 + (snout_pixel(:,2)-nose_pixel(:,2)).^2 );
         end
 
-        function [distance_left,distance_right] = get_distance_left_and_right(left_dlc,right_dlc)
+        function [distance_left,distance_right] = get_distance_left_and_right(self,left_dlc,right_dlc)
             pix_1 = [left_dlc.x1,left_dlc.y1];
             pix_2 =  [left_dlc.x2,left_dlc.y2];
             distance_left = sqrt( (pix_2(:,1)-pix_1(:,1)).^2 + (pix_2(:,2)-pix_1(:,2)).^2 );
