@@ -1,5 +1,9 @@
 %% this m file is using one single DLC file to detect whisker base of both Right whiskers and Left whiskser (in Mirror R format)
+<<<<<<< HEAD
 data_folder = '\\dk-server.dk.ucsd.edu\data\afassihizakeri\topview data\2023_02_22_ 163923';
+=======
+data_folder = '\\dk-server.dk.ucsd.edu\afassihizakeri\topview data\2023_02_22_ 163923';
+>>>>>>> e78c332a227d2fe640f8f36400f3d55c08d0a80d
 tracker = WhiskerTracker(data_folder);
 tracker.main()
 wait_bar = waitbar(0,'Tracking in progress...');

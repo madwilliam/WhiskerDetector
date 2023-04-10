@@ -57,10 +57,10 @@ classdef WhiskerTracker <DataAppender&WhiskerDetector
         end
 
         function status = run_janelia_whisker_tracking(self,vidname)
-            THISx = ['trace ' self.data_folder 'Mask' vidname 'L.avi ' self.data_folder 'Mask' vidname 'L.whiskers'];
-            THISy = ['trace ' self.data_folder   'Mirror' vidname 'R.avi ' self.data_folder 'Mirror' vidname 'R.whiskers'];
-            THISx2 = ['       measure --face right '  self.data_folder  'Mask' vidname 'L.whiskers '  self.data_folder  'Mask' vidname 'L.measurements               '];
-            THISY2 = ['       measure --face right '  self.data_folder  'Mirror' vidname 'R.whiskers '  self.data_folder  'Mirror' vidname 'R.measurements               '];
+            THISx = ['trace "' self.data_folder '\Mask' vidname 'L.avi ' self.data_folder '\Mask' vidname 'L.whiskers"'];
+            THISy = ['trace "' self.data_folder   '\Mirror' vidname 'R.avi ' self.data_folder '\Mirror' vidname 'R.whiskers"'];
+            THISx2 = ['       measure --face right "'  self.data_folder  '\Mask' vidname 'L.whiskers" "'  self.data_folder  '\Mask' vidname 'L.measurements"               '];
+            THISY2 = ['       measure --face right "'  self.data_folder  '\Mirror' vidname 'R.whiskers" "'  self.data_folder  '\Mirror' vidname 'R.measurements"               '];
             status = system(THISx);
             status2 = system(THISy);
             status3 = system(THISx2);
@@ -160,8 +160,21 @@ classdef WhiskerTracker <DataAppender&WhiskerDetector
                 plot(1,1,'k.')
             end
         end
+<<<<<<< HEAD
 
         function shared_frames = get_shared_frames(self,frame_data,left_dlc,right_dlc)
+=======
+      
+    function main(self)
+        trial_names = self.get_trial_names();
+        left_video = VideoReader(fullfile(self.data_folder,['Mask' trial_names{1} 'L.avi']));
+        right_video = VideoReader(fullfile(self.data_folder,['Mirror' trial_names{1} 'R.avi']));
+        for  vidname =trial_names
+            vidname = vidname{1};
+            % self.run_janelia_whisker_tracking(vidname);
+            [left_dlc,right_dlc] = self.load_dlc_files();
+            [frame_size_left,frame_size_right] = self.get_frame_sizes(left_video,right_video);
+>>>>>>> e78c332a227d2fe640f8f36400f3d55c08d0a80d
             [distance_left,distance_right] = self.get_distance_left_and_right(left_dlc,right_dlc);
             assert(numel(distance_left)==numel(distance_right))
             nose_to_snout_distance = self.get_nose_to_snout_distance(frame_data,right_dlc);
